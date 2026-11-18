@@ -1,134 +1,148 @@
-# 🩺 Boletim Epidemiológico: Perfil dos Nascimentos no Estado do Rio de Janeiro, 2022–2023
+# Boletim Epidemiológico: Perfil dos Nascimentos no Estado do Rio de Janeiro, 2022–2023
 
-![R](https://img.shields.io/badge/R-276DC3?style=flat-square&logo=r&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-success?style=flat-square)
-![Licença](https://img.shields.io/badge/Licença-CC--BY%204.0-lightgrey?style=flat-square)
+![R](https://img.shields.io/badge/Language-R-blue)
+![Status](https://img.shields.io/badge/Status-Em%20desenvolvimento-yellow)
+![License](https://img.shields.io/badge/License-a%20definir-lightgrey)
 
-## 📌 Sobre o Projeto
+## Sobre o projeto
 
-Este repositório contém os códigos e materiais utilizados na elaboração do boletim epidemiológico desenvolvido no âmbito da **Residência Multiprofissional em Vigilância em Saúde**.
+Este projeto apresenta a análise descritiva do perfil epidemiológico dos nascidos vivos de mães residentes no Estado do Rio de Janeiro, nos anos de 2022 e 2023, utilizando dados do Sistema de Informações sobre Nascidos Vivos (SINASC/DATASUS).
 
-O projeto tem como objetivo descrever o perfil epidemiológico dos nascidos vivos de mães residentes no Estado do Rio de Janeiro, nos anos de 2022 e 2023, utilizando informações provenientes do Sistema de Informações sobre Nascidos Vivos (SINASC).
+O processamento foi desenvolvido em R. O fluxo de execução está organizado em duas etapas: primeiro, a execução do script de extração, tratamento e organização dos dados; em seguida, a renderização do documento R Markdown que utiliza os resultados produzidos pelo script.
 
-Foram analisadas características dos nascimentos, do perfil materno e dos recém-nascidos, por meio de frequências absolutas e relativas, tabelas e gráficos elaborados na linguagem R.
-
----
-
-## 📂 Estrutura do Repositório
-
-O projeto está organizado da seguinte forma:
+## Estrutura do repositório
 
 ```text
-📦 boletim-Epidemiologico-Nascimentos-rj-2022-2023
- ┣ 📂 scripts
- ┃ ┣ 📜 Script_boletim_SINASC_SGM.R
- ┃ ┗ 📜 boletim_html.Rmd
- ┗ 📜 README.md
+boletim-epidemiologico-nascimentos-rj-2022-2023/
+│
+├── data/
+│   ├── originais/
+│   │   └── dados_originais.zip
+│   └── tratados/
+│       └── dados_tratados.zip
+│
+├── scripts/
+│   ├── Script_boletim_SINASC_SGM.R
+│   ├── boletim_html.Rmd
+│   └── resumo_estendido.Rmd
+│
+├── outputs/
+│   ├── tabelas/
+│   │   └── tabelas_nascimentos.xlsx
+│   ├── figuras/
+│   ├── boletim_html.html
+│   ├── resumo_estendido.html
+│   └── objetos_analise.RData
+│
+├── README.md
+└── .gitignore
 ```
 
-**Descrição dos arquivos:**
+**Observação:** os nomes dos arquivos compactados podem variar conforme os arquivos efetivamente disponibilizados no repositório. Mantenha os nomes e caminhos consistentes com os utilizados no script.
 
-- `Script_boletim_SINASC_SGM.R`: script responsável pela obtenção, processamento e organização dos dados, além da elaboração das tabelas utilizadas no boletim.
-- `boletim_html.Rmd`: documento responsável pela apresentação dos resultados, tabelas, gráficos e textos do boletim epidemiológico.
-- `README.md`: documento com informações sobre o projeto e orientações para sua execução.
+## Dados
 
----
+### Fonte
 
-## 💾 Preparação dos dados
+Os dados utilizados são provenientes do Sistema de Informações sobre Nascidos Vivos (SINASC), disponibilizado pelo Departamento de Informática do Sistema Único de Saúde (DATASUS), para o Estado do Rio de Janeiro, nos anos de 2022 e 2023.
 
-Antes de executar o projeto, é necessário realizar o download dos arquivos de dados disponibilizados na pasta `scripts` deste repositório.
+### Organização e acesso
 
-**Siga as orientações:**
+Os arquivos de dados estão organizados na pasta `data/` e disponibilizados em formato `.zip` devido ao tamanho dos arquivos.
 
-1. Acesse a pasta `scripts` no GitHub.
-2. Localize os arquivos de dados disponibilizados nessa pasta.
-3. Faça o download desses arquivos para o computador.
-4. Salve os arquivos baixados diretamente na pasta **Downloads** do computador.
-5. Mantenha os nomes originais dos arquivos, sem renomeá-los.
+Para utilizar os dados localmente:
 
-**Atenção:** os arquivos de dados devem ser mantidos na pasta `Downloads` para que o script consiga localizá-los durante a execução. Os arquivos de código `.R` e `.Rmd` devem permanecer na pasta `scripts` do projeto.
+1. Acesse `data/originais/` e baixe o arquivo compactado com os dados originais.
+2. Extraia o conteúdo do arquivo ZIP para a pasta `data/originais/`.
+3. Caso utilize a base tratada, baixe também o arquivo ZIP disponível em `data/tratados/` e extraia seu conteúdo para essa pasta.
+4. Confira se os nomes dos arquivos extraídos correspondem aos caminhos definidos no script.
 
----
+O arquivo ZIP precisa ser extraído antes da leitura pelo R. O R não lê automaticamente um CSV que esteja compactado em ZIP apenas porque o arquivo foi baixado para a pasta.
 
-## ⚙️ Requisitos para execução
+**Limite do GitHub:** arquivos individuais com mais de 100 MB não podem ser enviados normalmente para um repositório GitHub. Se algum ZIP ultrapassar esse limite, será necessário utilizar Git LFS ou disponibilizar o arquivo em um serviço de armazenamento externo, registrando o link e as instruções nesta seção.
 
-Para executar o projeto, é necessário ter instalado:
+## Como executar a análise
 
-- [R](https://cran.r-project.org/);
-- [RStudio](https://posit.co/download/rstudio-desktop/).
+### 1. Preparar o ambiente
 
-Também é necessário instalar os pacotes utilizados na elaboração do boletim.
+- Instale o [R](https://cran.r-project.org/).
+- Instale o [RStudio](https://posit.co/download/rstudio-desktop/).
+- Baixe ou clone este repositório para o computador.
+- Extraia os arquivos de dados ZIP que forem necessários.
 
-No RStudio, execute:
+### 2. Executar o script de processamento
 
-```r
-install.packages(c(
-  "tidyverse",
-  "ggplot2",
-  "knitr",
-  "kableExtra",
-  "scales",
-  "gridExtra",
-  "plotly",
-  "Microdatasus"
-))
-```
+Abra o arquivo:
 
----
+`scripts/Script_boletim_SINASC_SGM.R`
 
-## ▶️ Como executar o projeto
+Execute o script integralmente no RStudio, do início ao fim. Essa etapa realiza a obtenção/leitura dos dados, o tratamento das variáveis e a construção das tabelas utilizadas nos documentos.
 
-Após realizar o download do repositório e preparar os arquivos de dados, siga as etapas:
+Ao final da execução, o script deve disponibilizar os objetos de análise e gerar os arquivos de saída previstos, incluindo a planilha com as tabelas e o arquivo `outputs/objetos_analise.RData`.
 
-1. Abra o RStudio.
-2. Abra o arquivo `boletim_html.Rmd`, localizado na pasta `scripts`.
-3. Verifique se os arquivos de dados foram salvos na pasta `Downloads`.
-4. Abra o arquivo `.Rmd` no RStudio.
-5. Clique na opção **Knit** para executar o documento.
+**Esta etapa deve ser concluída antes de executar os documentos R Markdown.**
 
-Durante a execução, o script principal será acionado para realizar o processamento dos dados e disponibilizar as tabelas utilizadas na elaboração do boletim.
+### 3. Gerar o boletim em HTML
 
-Ao final, será gerado um documento em formato HTML contendo os resultados da análise epidemiológica.
+Depois de executar o script, abra:
 
----
+`scripts/boletim_html.Rmd`
 
-## 📊 Conteúdo do Boletim
+No RStudio, selecione **Knit** para gerar o boletim HTML. Salve o arquivo gerado na pasta `outputs/`.
 
-O boletim apresenta a análise descritiva do perfil dos nascimentos no Estado do Rio de Janeiro, contemplando:
+### 4. Gerar o resumo estendido
 
-**1. Perfil dos nascimentos**
-- Número de nascidos vivos por ano;
-- Sexo do recém-nascido;
-- Tipo de parto;
-- Local de ocorrência do nascimento.
+Em seguida, abra:
 
-**2. Perfil materno**
-- Faixa etária materna;
-- Raça/cor materna;
-- Escolaridade materna.
+`scripts/resumo_estendido.Rmd`
 
-**3. Perfil do recém-nascido**
-- Presença de anomalias congênitas;
-- Peso ao nascer;
-- Idade gestacional e prematuridade.
+Selecione **Knit** no RStudio. O resumo estendido utiliza os objetos gerados na etapa de processamento, sem executar novamente a extração e o tratamento dos microdados.
 
-Os resultados são apresentados por meio de tabelas, gráficos e descrição dos principais achados epidemiológicos.
+O arquivo HTML gerado deve ser armazenado em `outputs/`.
 
----
+## Tabelas e resultados
 
-## 📚 Fonte dos dados
+As dez tabelas produzidas pela análise são organizadas em uma única planilha Excel, com uma aba para cada tabela:
 
-Sistema de Informações sobre Nascidos Vivos (SINASC), disponibilizado pelo Departamento de Informática do Sistema Único de Saúde (DATASUS), Ministério da Saúde.
+1. Total de nascimentos;
+2. Nascimentos por sexo;
+3. Nascimentos por tipo de parto;
+4. Nascimentos por local de ocorrência;
+5. Faixa etária materna;
+6. Raça/cor materna;
+7. Escolaridade materna;
+8. Anomalias congênitas;
+9. Peso ao nascer;
+10. Idade gestacional/prematuridade.
 
-**Período analisado:** 2022 e 2023.
+A planilha deve ser salva em `outputs/tabelas/tabelas_nascimentos.xlsx`. Os gráficos devem ser organizados em `outputs/figuras/`, e os documentos finais em HTML devem permanecer diretamente em `outputs/`.
 
-**Abrangência geográfica:** Estado do Rio de Janeiro, considerando os nascidos vivos de mães residentes no estado.
+## Pacotes utilizados
 
----
+O script utiliza pacotes do R para extração, leitura, tratamento, organização, análise e apresentação dos dados. Entre os pacotes identificados no código estão:
 
-## 👩‍💻 Elaboração
+- `microdatasus`
+- `read.dbc`
+- `tidyverse`
+- `ggplot2`
+- `scales`
+- `writexl`
+- `kableExtra`
+- `gridExtra`
+- `knitr`
 
-Sara Gonçalves Matias
+A instalação de pacotes deve ser realizada conforme as instruções do próprio script e as necessidades do ambiente R utilizado.
 
-Residente de Vigilância em Saúde – Fiocruz Brasília.
+## Reprodutibilidade
 
+Para reproduzir os resultados, é necessário executar as etapas na ordem indicada: script de processamento, boletim HTML e resumo estendido. Os documentos R Markdown dependem dos objetos e arquivos gerados pelo script.
+
+As versões do R e dos pacotes devem ser registradas quando a versão final do projeto for publicada, para facilitar a reprodução em outros computadores.
+
+## Limitações
+
+A análise utiliza dados secundários do SINASC e está sujeita à qualidade e à completitude dos registros da Declaração de Nascido Vivo. As frequências e percentuais apresentados descrevem os registros disponíveis e não devem ser interpretados, isoladamente, como medidas de incidência ou risco populacional.
+
+## Licença
+
+A licença de uso e compartilhamento do projeto deverá ser definida antes da publicação final.
