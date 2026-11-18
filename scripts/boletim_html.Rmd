@@ -1,0 +1,834 @@
+---
+title: "Boletim Epidemiológico <br> Perfil dos Nascimentos no Estado do Rio de Janeiro, 2022–2023"
+subtitle: "Subsecretaria de Vigilância em Saúde <br> Secretaria de Saúde do Distrito Federal"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    self_contained: true
+    theme: flatly
+lang: pt-BR
+---
+
+<style>
+
+.title {
+  text-align: center !important;
+  color: #5B0E2D;
+}
+
+.subtitle {
+  text-align: center !important;
+  color: #5B0E2D;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  text-align: justify;
+  line-height: 1.7;
+}
+
+p {
+  text-align: justify;
+}
+
+h1 {
+  background: #5B0E2D;
+  color: white !important;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  margin-top: 25px;
+}
+
+h2 {
+  background: #D8A0AF;
+  color: #5B0E2D !important;
+  padding: 8px;
+  border-radius: 6px;
+  font-weight: bold;
+  margin-top: 15px;
+}
+
+.capa {
+  border: 3px solid #5B0E2D;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.box {
+  background-color: #F4E6EB;
+  padding: 15px;
+  border-left: 5px solid #F4E6EB;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+
+</style>
+
+
+```{r setup, include=FALSE}
+# Configurações
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 7,
+  fig.height = 5
+)
+
+# Carregar pacotes
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(scales)
+library(gridExtra)
+
+
+#====================================================
+# EXECUTAR O SCRIPT PRINCIPAL
+# =====================================================
+
+# O Knit usa a pasta do .Rmd como diretório de trabalho,
+# então este caminho funciona em qualquer computador.
+caminho_script <- file.path("scripts", "Script_boletim_SINASC_SGM.R")
+
+if (!file.exists(caminho_script)) {
+  stop(
+    "Script não encontrado: ", caminho_script, "\n",
+    "Diretório atual: ", getwd(), "\n",
+    "Verifique se o .Rmd está na pasta principal do projeto, ",
+    "junto da pasta 'scripts'."
+  )
+}
+
+source(caminho_script, encoding = "UTF-8")
+cat("Script principal executado com sucesso!\n")
+
+# =====================================================
+# VERIFICAR SE AS TABELAS FORAM CRIADAS
+# =====================================================
+tabelas_esperadas <- c("tab_total_nasc", "tab_sexo", "tab_parto", "tab_local", 
+                       "tab_idade", "tab_raca", "tab_escolaridade", 
+                       "tab_anomalia", "tab_baixo_peso", "tab_prematuro")
+
+for(tabela in tabelas_esperadas) {
+  if(!exists(tabela)) {
+    stop(paste("Erro: A tabela", tabela, "não foi criada pelo seu script."))
+  }
+}
+
+cat("✅ Todas as tabelas foram carregadas com sucesso!\n")
+
+# =====================================================
+# EXTRAIR VALORES PARA USAR NO TEXTO
+# =====================================================
+total_2022 <- tab_total_nasc %>%
+  filter(ano == 2022) %>%
+  summarise(total = sum(Total)) %>%
+  pull(total)
+
+total_2023 <- tab_total_nasc %>%
+  filter(ano == 2023) %>%
+  summarise(total = sum(Total)) %>%
+  pull(total)
+
+total_geral <- sum(tab_total_nasc$Total)
+
+total_2022_fmt <- format(total_2022, big.mark = ".")
+total_2023_fmt <- format(total_2023, big.mark = ".")
+total_geral_fmt <- format(total_geral, big.mark = ".")
+
+# Prematuridade 2023
+prem_extremo_2023 <- tab_prematuro %>% 
+  filter(ano == 2023, prematuro_desc == "Prematuridade extrema") %>% 
+  pull(Percentual)
+
+pre_termo_2023 <- tab_prematuro%>% 
+  filter(ano == 2023, prematuro_desc == "Pré-termo") %>% 
+  pull(Percentual)
+
+a_termo_2023 <- tab_prematuro %>% 
+  filter(ano == 2023, prematuro_desc == "A termo") %>% 
+  pull(Percentual)
+
+# Baixo peso 2023
+baixo_peso_2023 <- tab_baixo_peso %>% 
+  filter(ano == 2023, baixo_peso_desc == "Baixo peso (<2500g)") %>% 
+  pull(Percentual)
+
+# Cesáreas 2023
+cesareas_2023 <- tab_parto %>% 
+  filter(ano == 2023, parto_desc == "Cesáreo") %>% 
+  pull(Percentual)
+
+# Variação
+variacao <- total_2023 - total_2022
+if(variacao < 0) {
+  tendencia <- "redução de"
+  variacao_fmt <- format(abs(variacao), big.mark = ".")
+} else {
+  tendencia <- "aumento de"
+  variacao_fmt <- format(variacao, big.mark = ".")
+}
+```
+
+
+
+
+
+\begin{tcolorbox}[
+    colback=white,               % Fundo BRANCO
+    colframe=corPrincipal,       % Borda vinho escuro
+    coltext=black,               % Texto PRETO
+    arc=5pt,
+    boxrule=2.5pt,
+    enhanced,
+    drop fuzzy shadow,
+    width=\textwidth,
+    center title,
+    fonttitle=\Huge\bfseries\color{corSecundaria},
+    title={Boletim Epidemiológico:},
+    after title={\\[0.3cm] 
+    \Large \bfseries \textcolor{corSecundaria}{Perfil dos Nascimentos no Estado do Rio de Janeiro, 2022–2023}
+    }
+]
+\large Subsecretaria de Vigilância em Saúde / Secretaria de Saúde do Distrito Federal
+\end{tcolorbox}
+
+\vspace{0.5cm}
+
+
+<div style="text-align:right; margin-bottom:20px;">
+  <button onclick="window.print()"
+    style="background:#5B0E2D;color:white;border:none;padding:10px 20px;
+           border-radius:5px;cursor:pointer;font-size:14px;">
+    📄 Exportar para PDF
+  </button>
+</div>
+
+\vspace{0.5cm}
+
+# Introdução 
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+O Sistema de Informações sobre Nascidos Vivos (SINASC) foi implantado pelo Ministério da Saúde em 1990 com o objetivo de reunir informações epidemiológicas referentes aos nascimentos ocorridos no território nacional, constituindo uma das principais fontes de dados para o monitoramento das condições de saúde materno-infantil no Brasil (Brasil,2025). O sistema tem como documento padrão de coleta a Declaração de Nascido Vivo (DNV), instrumento de preenchimento obrigatório para todos os nascimentos vivos, independentemente do local de ocorrência (Brasil,2025).
+
+O SINASC disponibiliza informações relacionadas às características do recém-nascido, da gestação, do parto e da mãe, permitindo o acompanhamento de indicadores essenciais para a vigilância em saúde e para o planejamento de políticas públicas voltadas à atenção materna e infantil. Entre as variáveis disponíveis destacam-se sexo da criança, peso ao nascer, idade gestacional, presença de anomalias congênitas, tipo de parto, local de ocorrência do nascimento, idade materna, escolaridade, raça/cor da mãe e número de consultas de pré-natal realizadas durante a gestação (Brasil, 2022).
+
+No contexto do Estado do Rio de Janeiro, a análise dos dados do SINASC possibilita identificar características epidemiológicas dos nascimentos, monitorar tendências temporais e subsidiar ações voltadas à qualificação da atenção pré-natal, ao parto e ao cuidado neonatal. Assim, o presente boletim tem por objetivo descrever o perfil epidemiológico dos nascidos vivos residentes no Estado do Rio de Janeiro nos anos de 2022 e 2023, utilizando informações provenientes do Sistema de Informações sobre Nascidos Vivos.
+
+</div>
+
+# Metodologia 
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+Trata-se de um estudo descritivo, de abordagem quantitativa, realizado a partir dos registros de nascidos vivos do Sistema de Informações sobre Nascidos Vivos (SINASC) referentes aos residentes do Estado do Rio de Janeiro nos anos de 2022 e 2023.
+
+Os dados foram obtidos por meio do pacote Microdatasus, utilizando a linguagem de programação R. Inicialmente, foi realizada a extração dos registros disponibilizados pelo Departamento de Informática do Sistema Único de Saúde (DATASUS), seguida das etapas de processamento, tratamento e padronização das variáveis para análise.
+
+Foram calculadas frequências absolutas e relativas das características dos nascimentos, das mães e dos recém-nascidos. O perfil dos nascimentos foi descrito segundo o ano de ocorrência, sexo do recém-nascido, tipo de parto e local de ocorrência do nascimento.
+
+O perfil materno foi caracterizado pelas variáveis faixa etária, raça/cor e escolaridade. Para a variável escolaridade materna foi adotada a classificação do Censo Demográfico de 2010 (ESCMAE2010), conforme padronização utilizada pelo Ministério da Saúde.
+
+O perfil dos recém-nascidos foi analisado segundo peso ao nascer, idade gestacional e ocorrência de anomalias congênitas, de acordo com as definições Classificação Estatística Internacional de Doenças e Problemas Relacionados com a Saúde – 11ª Revisão (CID-11) (OMS, 2022).
+  
+
+Para a classificação do peso ao nascer foram utilizados os seguintes grupos:
+
+- Baixo peso: menos de 2.500 g;
+        
+- Peso adequado: de 2.500 g a 3.999 g;
+        
+- Peso elevado: 4.000 g ou mais.
+
+A idade gestacional foi classificada em:
+
+- Prematuridade extrema: menos de 22 semanas e de 22 a 27 semanas;
+        
+- Pré-termo: de 28 a 36 semanas;
+        
+- A termo: de 37 a 41 semanas;
+        
+- Pós-termo: 42 semanas ou mais.
+
+A presença de anomalias congênitas foi analisada segundo as categorias "sim", "não" e "ignorado/sem informação".
+
+Os resultados foram apresentados por meio de tabelas e gráficos, permitindo a comparação do perfil epidemiológico dos nascimentos entre os anos analisados.
+
+
+</div>
+
+```{r setup-graficos, echo=FALSE, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(scales)
+library(dplyr)
+library(plotly)
+
+tema_boletim <- theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_blank(),
+    axis.title = element_text(
+      face = "bold",
+      colour = "#5B0E2D"
+    ),
+    axis.text = element_text(
+      colour = "black"
+    ),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid.minor = element_blank(),
+     plot.caption = element_text(
+      hjust = 0,
+      size = 8,
+      colour = "black",
+      face = "plain"
+    )
+  )
+
+cor_2022 <- "#5B0E2D"
+cor_2023 <- "#D8A0AF"
+```
+
+
+# Situação Epidemiológica 
+
+
+## Perfil dos nascimentos
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+Entre os anos de 2022 e 2023 foram registrados no Sistema de Informações sobre Nascidos Vivos (SINASC) 356.514 nascidos vivos de mães residentes no Estado do Rio de Janeiro. Desses, 180.369 (50,6%) ocorreram em 2022 e 176.145 (49,4%) em 2023, correspondendo a uma redução de 2,3% no número de nascimentos entre os anos analisados. Em relação ao sexo do recém-nascido, observou-se predomínio do sexo masculino em ambos os anos. Em 2022, foram registrados 92.045 (51,0%) nascidos vivos do sexo masculino e 88.304 (49,0%) do sexo feminino. Em 2023, os nascimentos masculinos corresponderam a 89.848 (51,0%) registros e os femininos a 86.281 (49,0%). Os registros com sexo ignorado representaram menos de 0,1% dos nascimentos em ambos os anos, evidenciando elevada completitude dessa variável (Figura 1).
+
+</div>
+
+**Figura 1.** Distribuição dos nascidos vivos de mães residentes no estado do Rio de Janeiro, segundo sexo do recém-nascido e ano de ocorrência. Rio de Janeiro, 2022 e 2023.
+
+```{r , echo=FALSE, fig.width=7, fig.height=5,out.width='80%'}
+
+library(plotly)
+library(dplyr)
+
+# Dados lidos da tabela tab_sexo (gerada pelo script), sem valores digitados.
+# Registros sem ano (1 registro corrompido) ficam de fora; qualquer categoria
+# diferente de Masculino/Feminino ("Ignorado" ou "Sem informação") é agrupada
+# em "Ignorado", de modo que a soma bate com o total de nascimentos do ano.
+dados <- tab_sexo %>%
+  filter(!is.na(ano)) %>%
+  mutate(
+    Ano = as.character(ano),
+    Sexo = case_when(
+      sexo_desc == "Masculino" ~ "Masculino",
+      sexo_desc == "Feminino"  ~ "Feminino",
+      TRUE                     ~ "Ignorado"
+    )
+  ) %>%
+  group_by(Ano, Sexo) %>%
+  summarise(Nascimentos = sum(Total), .groups = "drop") %>%
+  group_by(Ano) %>%
+  mutate(
+    Perc_bruto = Nascimentos / sum(Nascimentos) * 100,
+    Percentual = ifelse(Sexo == "Ignorado",
+                        round(Perc_bruto, 2),
+                        round(Perc_bruto, 1)),
+
+    Rotulo = paste0(
+      format(Nascimentos, big.mark = ".", trim = TRUE),
+      "<br>(",
+      Percentual,
+      "%)"
+    ),
+
+    Tooltip = paste0(
+      "<b>", Sexo, "</b><br>",
+      format(Nascimentos, big.mark = ".", trim = TRUE),
+      " nascimentos<br>",
+      Percentual,
+      "%"
+    )
+  ) %>%
+  ungroup()
+
+# Total do ano e quantidade de ignorados (anotados acima de cada barra)
+totais <- dados %>%
+  group_by(Ano) %>%
+  summarise(
+    Total     = sum(Nascimentos),
+    Ignorados = sum(Nascimentos[Sexo == "Ignorado"]),
+    .groups   = "drop"
+  )
+
+dados$Sexo <- factor(
+  dados$Sexo,
+  levels = c("Masculino", "Feminino", "Ignorado")
+)
+
+graf <- plot_ly(
+  dados,
+  x = ~Ano,
+  y = ~Nascimentos,
+  color = ~Sexo,
+  colors = c(
+    "Masculino" = "#5B0E2D",
+    "Feminino"  = "#D8A0AF",
+    "Ignorado"  = "#7F7F7F"
+  ),
+  type = "bar",
+
+  text = ~Rotulo,
+  textposition = "inside",
+
+  hovertext = ~Tooltip,
+  hoverinfo = "text"
+) %>%
+
+add_text(
+  data = totais,
+  x = ~Ano,
+  y = ~Total * 1.08,
+  text = ~paste0(
+    "<b>",
+    format(Total, big.mark = ".", trim = TRUE),
+    "</b><br>Ignorado: ",
+    format(Ignorados, big.mark = ".", trim = TRUE)
+  ),
+  showlegend = FALSE,
+  inherit = FALSE
+) %>%
+
+layout(
+  barmode = "stack",
+
+  xaxis = list(
+    title = "Ano"
+  ),
+
+  yaxis = list(
+    title = "Número de nascimentos",
+    tickformat = ",d",
+    range = c(0, max(totais$Total) * 1.2)   # espaço para o total + ignorados
+  ),
+
+  legend = list(
+    orientation = "h",
+    x = 0.35,
+    y = -0.15
+  )
+)
+
+graf
+
+```
+
+
+**Fonte**: Sistema de Informações sobre Nascidos Vivos (SINASC/DATASUS). Elaboração própria, 2026.
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+
+Quanto ao tipo de parto, verificou-se predominância de partos cesáreos no período analisado. Em 2022 foram registrados 107.157 partos cesáreos (59,4%) e 73.144 partos vaginais (40,6%). Em 2023, os partos cesáreos totalizaram 106.429 registros (60,4%), enquanto os partos vaginais corresponderam a 69.651 (39,5%). Observou-se aumento percentual na participação dos partos cesáreos entre os anos analisados, mantendo-se acima da metade dos nascimentos ocorridos no estado (Figura 2).
+
+</div>
+
+**Figura 2.** Distribuição percentual dos nascidos vivos segundo tipo de parto. Rio de Janeiro, 2022 e 2023.
+
+```{r fig2, echo=FALSE, fig.width=7, fig.height=5,out.width='80%'}
+
+library(plotly)
+library(dplyr)
+
+dados_parto <- tab_parto %>%
+  filter(!is.na(ano)) %>%                       # exclui o registro sem data de nascimento
+  mutate(
+    parto_desc = case_when(
+      parto_desc %in% c("Ignorado", "Sem informação") ~ "Ignorado/Sem informação",
+      TRUE ~ parto_desc
+    )
+  ) %>%
+  group_by(
+    ano,
+    parto_desc
+  ) %>%
+  summarise(
+    Total = sum(Total),
+    .groups = "drop"
+  ) %>%
+  group_by(ano) %>%
+  mutate(
+    Perc_bruto = Total / sum(Total) * 100,
+    Percentual = ifelse(parto_desc == "Ignorado/Sem informação",
+                        round(Perc_bruto, 2),
+                        round(Perc_bruto, 1)),
+
+    Rotulo = paste0(
+      format(Total, big.mark = ".", trim = TRUE),
+      "<br>(",
+      Percentual,
+      "%)"
+    ),
+
+    Tooltip = paste0(
+      "<b>", parto_desc, "</b><br>",
+      format(Total, big.mark = ".", trim = TRUE),
+      " nascimentos<br>",
+      Percentual,
+      "% do total do ano"
+    )
+  ) %>%
+  ungroup()
+
+dados_parto$parto_desc <- factor(
+  dados_parto$parto_desc,
+  levels = c(
+    "Cesáreo",
+    "Vaginal",
+    "Ignorado/Sem informação"
+  )
+)
+
+# Total do ano e quantidade de ignorados (anotados acima de cada barra)
+totais_parto <- dados_parto %>%
+  group_by(ano) %>%
+  summarise(
+    Total_Ano = sum(Total),
+    Ignorados = sum(Total[parto_desc == "Ignorado/Sem informação"]),
+    .groups   = "drop"
+  )
+
+
+graf_parto <- plot_ly(
+  dados_parto,
+  x = ~factor(ano),
+  y = ~Total,
+  color = ~parto_desc,
+  colors = c(
+    "#5B0E2D",  # Cesáreo
+    "#D8A0AF",  # Vaginal
+    "#BDBDBD"   # Ignorado/Sem informação
+  ),
+  type = "bar",
+
+  text = ~Rotulo,
+  textposition = "inside",
+
+  hovertext = ~Tooltip,
+  hoverinfo = "text"
+) %>%
+
+  add_text(
+    data = totais_parto,
+    x = ~factor(ano),
+    y = ~Total_Ano * 1.08,
+    text = ~paste0(
+      "<b>",
+      format(Total_Ano, big.mark = ".", trim = TRUE),
+      "</b><br>Ignorado/Sem inf.: ",
+      format(Ignorados, big.mark = ".", trim = TRUE)
+    ),
+    showlegend = FALSE,
+    inherit = FALSE
+  ) %>%
+
+  layout(
+    barmode = "stack",
+
+    xaxis = list(
+      title = "Ano"
+    ),
+
+    yaxis = list(
+      title = "Número de nascimentos",
+      tickformat = ",d",
+      range = c(0, max(totais_parto$Total_Ano) * 1.2)   # espaço para total + ignorados
+    ),
+
+    legend = list(
+      title = list(text = ""),
+      orientation = "h",
+      x = 0.35,
+      y = -0.15
+    )
+  )
+
+graf_parto
+
+```
+**Fonte:** Sistema de Informações sobre Nascidos Vivos (SINASC/DATASUS). Elaboração própria, 2026.
+
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+Em relação ao local de ocorrência do nascimento, observou-se predomínio expressivo dos partos hospitalares. Em 2022, 178.781 nascimentos (99,1%) ocorreram em hospitais e, em 2023, 174.695 (99,2%). Os nascimentos domiciliares representaram 0,51% dos registros em 2022 e 0,49% em 2023. Os demais locais de ocorrência corresponderam a menos de 0,5% dos nascimentos em ambos os anos, evidenciando elevada institucionalização da assistência ao parto no estado.
+
+</div>
+
+## Perfil materno
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+A distribuição dos nascimentos segundo faixa etária materna demonstrou concentração entre mulheres de 20 a 29 anos, que representaram aproximadamente metade dos nascimentos em ambos os anos analisados. Em 2022, essa faixa etária correspondeu a 89.559 nascimentos (49,6%) e, em 2023, a 87.505 (49,7%). As mulheres de 30 a 34 anos representaram a segunda maior proporção de nascimentos, com 20,8% em 2022 e 20,7% em 2023. As mães adolescentes (<20 anos) corresponderam a 11,2% dos nascimentos em 2022 e 10,9% em 2023, indicando redução da participação desse grupo etário (Figura 3).
+
+</div>
+
+**Figura 3.** Distribuição dos nascidos vivos por faixa etária materna. Rio de Janeiro, 2022 e 2023.
+```{r fig3, echo=FALSE, fig.width=8, fig.height=5,out.width='100%', fig.pos='H'}
+
+tab_idade_plot <- tab_idade %>%
+  filter(
+    !is.na(faixa_etaria_desc),
+    faixa_etaria_desc != "NA"
+  ) %>%
+  mutate(
+    faixa_etaria_desc = factor(
+      faixa_etaria_desc,
+      levels = c(
+        "< 15 anos",
+        "15 a 19 anos",
+        "20 a 29 anos",
+        "30 a 34 anos",
+        "35 a 39 anos",
+        "40 a 44 anos",
+        "45 anos ou mais"
+      )
+    ),
+    rotulo = paste0(
+      format(Total, big.mark = "."),
+      "<br>(",
+      round(Percentual,1),
+      "%)"
+    )
+  )
+graf_idade <- plot_ly(
+  tab_idade_plot,
+  x = ~faixa_etaria_desc,
+  y = ~Total,
+  color = ~factor(ano),
+  colors = c("#5B0E2D", "#D8A0AF"),
+  type = "bar",
+  text = ~rotulo,
+  textposition = "inside"
+) %>%
+  layout(
+    barmode = "group",
+    xaxis = list(title = ""),
+    yaxis = list(title = "Número de nascimentos"),
+    legend = list(
+      title = list(text = ""),
+      orientation = "h",
+      x = 0.3,
+      y = -0.2
+    )
+  )
+
+graf_idade
+
+```
+**Fonte:** Sistema de Informações sobre Nascidos Vivos (SINASC/DATASUS). Elaboração própria, 2026.
+
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+Quanto à raça/cor materna, observou-se predominância de mães autodeclaradas pardas durante todo o período analisado. Em 2022, essa categoria representou 89.158 registros (49,4%), seguida pelas mães brancas, com 58.022 nascimentos (32,2%), e pretas, com 28.043 (15,6%). Em 2023, as mães pardas corresponderam a 86.599 registros (49,2%), as brancas a 57.474 (32,6%) e as pretas a 29.518 (16,8%). Destaca-se a redução dos registros sem informação de raça/cor, que passaram de 2,3% em 2022 para 0,8% em 2023, indicando melhora da qualidade do preenchimento dessa variável (Figura 4).
+
+</div>
+
+**Figura 4.** Distribuição dos nascidos vivos por raça/cor materna no Rio de Janeiro, 2022 e 2023.
+```{r fig4, echo=FALSE, fig.width=7, fig.height=5,out.width='100%', fig.pos='H'}
+
+library(dplyr)
+library(plotly)
+library(scales)
+
+
+# Esperado: ano, raca_cor, n
+
+dados_raca_plot <- tab_raca %>%
+  mutate(
+    racacor_desc = case_when(
+      racacor_desc %in% c("Ignorado", "Sem informação", "Sem informação de raça/cor") ~ "Sem informação",
+      TRUE ~ racacor_desc
+    )
+  ) %>%
+  group_by(ano, racacor_desc) %>%
+  summarise(Total = sum(Total), .groups = "drop") %>%
+  group_by(ano) %>%
+  mutate(
+    perc = Total / sum(Total) * 100
+  ) %>%
+  ungroup()
+
+graf_raca <- plot_ly(
+  dados_raca_plot,
+  x = ~factor(ano),
+  y = ~perc,
+  color = ~racacor_desc,
+ colors = c(
+  "Parda" = "#7A1F2B",
+  "Branca" = "#B23A48",
+  "Preta" = "#4A0F18",
+  "Amarela" = "#D98C94",
+  "Indígena" = "#8C2F39",
+  "Sem informação" = "#D9D9D9"
+),
+  type = "bar",
+  text = ~paste0(round(perc, 1), "%"),
+  textposition = "inside"
+) %>%
+  layout(
+    barmode = "stack",
+    xaxis = list(title = ""),
+    yaxis = list(title = "Percentual (%)", tickformat = "%"),
+    legend = list(title = list(text = "Raça/cor materna"))
+  )
+
+graf_raca
+```
+**Fonte:** Sistema de Informações sobre Nascidos Vivos (SINASC/DATASUS). Elaboração própria, 2026.
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+Em relação à escolaridade materna, observou-se predominância da categoria Ensino Fundamental completo (5ª a 8ª série), responsável por 54,2% dos registros em 2022 e 55,8% em 2023. O Ensino Fundamental incompleto representou 19,0% dos nascimentos em 2022 e 17,9% em 2023, enquanto o Ensino Médio completo correspondeu a 17,3% e 17,8%, respectivamente. As categorias sem instrução, sem informação e não se aplica apresentaram frequências inferiores a 2% em ambos os anos.
+
+</div>
+
+## Perfil do recém-nascido
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+Entre os nascidos vivos registrados no período, a maioria não apresentou anomalias congênitas. Em 2022, foram registrados 1.195 casos com anomalias congênitas (0,66%), enquanto em 2023 foram identificados 1.217 casos (0,69%), correspondendo a um aumento de 1,8% no número de casos. A proporção de registros classificados como sem anomalia passou de 95,8% em 2022 para 97,0% em 2023. Observou-se redução dos registros classificados como sem informação (1,7% para 0,35%), embora a categoria ignorado tenha aumentado (1,79% para 2,01%); somadas, as duas categorias de ausência de informação passaram de 3,5% para 2,4%.
+
+Quanto ao peso ao nascer, verificou-se predominância de recém-nascidos com peso adequado (2.500 g a 3.999 g), representando 154.290 registros (85,5%) em 2022 e 150.935 (85,7%) em 2023. O baixo peso ao nascer (<2.500 g) foi observado em 18.334 nascimentos (10,2%) em 2022 e em 17.987 (10,2%) em 2023, mantendo-se estável no período. Já os recém-nascidos com peso elevado (≥4.000 g) corresponderam a 4,3% dos nascimentos em 2022 e 4,1% em 2023 (Figura 5).
+
+</div>
+
+**Figura 5.** Distribuição percentual dos nascidos vivos segundo peso ao nascer. Rio de Janeiro, 2022 e 2023.
+```{r fig5, echo=FALSE, fig.width=7, fig.height=5,out.width='80%', fig.pos='H'}
+
+library(dplyr)
+library(plotly)
+
+tab_peso_plot <- tab_baixo_peso %>%
+  filter(baixo_peso_desc != "Peso ignorado") %>%
+  group_by(ano, baixo_peso_desc) %>%
+  summarise(Total = sum(Total), .groups = "drop") %>%
+  group_by(ano) %>%
+  mutate(
+    perc = Total / sum(Total) * 100
+  ) %>%
+  ungroup()
+
+
+graf_peso <- plot_ly(
+  tab_peso_plot,
+  x = ~factor(ano),
+  y = ~perc,
+  color = ~baixo_peso_desc,
+  colors = c(
+    "Baixo peso (<2500g)" = "#5B0E2D",
+    "Peso adequado (2500g a 3999g)" = "#A63A50",
+    "Peso elevado (>=4000g)" = "#E8CDD9"
+  ),
+  type = "bar",
+  text = ~paste0(sprintf("%.2f", perc), "%"),
+  textposition = "inside",
+  hovertemplate = paste(
+    "%{x}<br>",
+    "%{fullData.name}: %{y:.2f}%<br>",
+    "<extra></extra>"
+  )
+) %>%
+
+  layout(
+    barmode = "stack",
+
+    xaxis = list(
+      title = "",
+      showspikes = FALSE
+    ),
+
+    yaxis = list(
+      title = "Percentual (%)",
+      range = c(0, 100),
+      ticksuffix = "%"
+    ),
+
+    legend = list(title = list(text = "Peso ao nascer")),
+
+    hovermode = "x unified"
+  )
+
+graf_peso
+```
+**Fonte:** Sistema de Informações sobre Nascidos Vivos (SINASC/DATASUS). Elaboração própria, 2026.
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+Em relação à idade gestacional, observou-se predomínio de nascimentos a termo (37 a 41 semanas), correspondendo a 154.773 registros (85,8%) em 2022 e 151.411 (86,0%) em 2023. Os nascimentos pré-termo representaram 11,2% dos registros em 2022 e 11,3% em 2023, enquanto a prematuridade extrema correspondeu a menos de 1% dos nascimentos em ambos os anos. Os nascimentos pós-termo representaram aproximadamente 1,4% dos registros no período analisado. Houve redução dos registros sem informação de idade gestacional, de 1,0% em 2022 para 0,7% em 2023, indicando melhoria na qualidade da informação.
+
+</div>
+
+
+
+
+# Considerações Finais
+
+<div class="box" style="text-align: justify; border-left: none;">
+
+A análise dos nascidos vivos de mães residentes no Estado do Rio de Janeiro entre 2022 e 2023 evidenciou redução no número de nascimentos, mantendo características semelhantes no perfil materno e neonatal ao longo do período analisado.
+
+Entre os recém-nascidos, verificou-se predominância do sexo masculino, elevada ocorrência de partos em ambiente hospitalar e alta proporção de partos cesáreos, superior a 59% em ambos os anos. Esse cenário reforça a importância do monitoramento contínuo das práticas obstétricas e do incentivo às estratégias de promoção do parto vaginal quando clinicamente indicado.
+
+Quanto ao perfil materno, a maioria dos nascimentos ocorreu entre mulheres de 20 a 29 anos, seguida da faixa etária de 30 a 34 anos. Observou-se redução da participação de mães adolescentes, indicador que pode refletir avanços nas ações de educação em saúde e planejamento reprodutivo. Em relação à raça/cor, predominou a população parda, acompanhando a composição demográfica do estado. A escolaridade materna concentrou-se principalmente entre mulheres com Ensino Fundamental completo, evidenciando a relevância dos determinantes sociais na análise dos indicadores de saúde materno-infantil.
+
+No que se refere às características dos recém-nascidos, observou-se predomínio de peso adequado ao nascer e de nascimentos a termo, indicadores favoráveis para a saúde neonatal. As proporções de baixo peso ao nascer e de prematuridade apresentaram pouca variação entre os anos analisados, ressaltando a necessidade de manutenção e fortalecimento das ações de acompanhamento pré-natal e assistência ao parto voltadas à prevenção de desfechos adversos. A frequência de anomalias congênitas permaneceu inferior a 1% dos registros durante todo o período estudado.
+
+Destaca-se ainda a melhoria da completitude de variáveis importantes do Sistema de Informações sobre Nascidos Vivos (SINASC), especialmente raça/cor materna, presença de anomalias congênitas e idade gestacional, contribuindo para o aumento da qualidade e da confiabilidade das informações produzidas pelo sistema.
+
+Dessa forma, os resultados apresentados reforçam a importância do SINASC como instrumento fundamental para o monitoramento das condições de nascimento e para o planejamento de políticas públicas voltadas à saúde materno-infantil. O acompanhamento sistemático desses indicadores permite identificar tendências, subsidiar intervenções oportunas e contribuir para a qualificação da assistência prestada às gestantes e aos recém-nascidos no Estado do Rio de Janeiro.
+
+</div>
+
+
+# Referências Bibliográficas 
+
+BRASIL. Ministério da Saúde. Sistema de Informações sobre Nascidos Vivos (SINASC): manual de preenchimento da Declaração de Nascido Vivo. Brasília: Ministério da Saúde, 2022.
+
+BRASIL. Ministério da Saúde. Sistema de Informações sobre Nascidos Vivos (SINASC). Brasília: Ministério da Saúde, 2025. Disponível em: http://www2.datasus.gov.br/DATASUS/index.php?area=060702. Acesso em: 19 jun. 2026.
+
+BRASIL. Ministério da Saúde. Departamento de Informática do SUS (DATASUS). Microdatasus: pacote para extração e processamento de microdados do DATASUS. Brasília: DATASUS, 2024. Disponível em: https://github.com/rfsaldanha/microdatasus. Acesso em: 19 jun. 2026.
+
+ORGANIZAÇÃO MUNDIAL DA SAÚDE (OMS). Classificação Estatística Internacional de Doenças e Problemas Relacionados à Saúde (CID-11). Genebra: OMS, 2022. Disponível em: https://icd.who.int/browse11/l-m/en. Acesso em: 19 jun. 2026.
+
+
+<hr>
+
+---
+
+<div style="border:2px solid #5B0E2D;
+padding:20px;
+border-radius:10px;
+background:#f8f4f6;">
+
+<h3>Secretaria de Saúde do Distrito Federal</h3>
+
+<p>Subsecretaria de Vigilância em Saúde</p>
+
+<p>Diretoria de Vigilância Epidemiológica – DIVEP</p>
+
+<p><strong>Elaboração:</strong><br>
+Sara Gonçalves Matias – Residente de Vigilância em Saúde – Fiocruz Brasília</p>
+
+<p><strong>Contato:</strong><br>
+divep.svs@saude.df.gov.br</p>
+
+</div>
