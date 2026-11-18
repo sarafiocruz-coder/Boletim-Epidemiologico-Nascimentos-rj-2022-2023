@@ -15,10 +15,9 @@ O processamento foi desenvolvido em R. O fluxo de execução está organizado em
 ```text
 boletim-epidemiologico-nascimentos-rj-2022-2023/
 │
-├── data/
-│   ├── originais/
-│   │   └── dados_originais.zip
-│   └── tratados/
+├── Documetos/
+│   ├── dados_decodificados_compactado    # dados gerais tratados
+│   └── dados_gerais_RJ_2022_2023/
 │       └── dados_tratados.zip
 │
 ├── scripts/
@@ -31,8 +30,6 @@ boletim-epidemiologico-nascimentos-rj-2022-2023/
 │   │   └── tabelas_nascimentos.xlsx
 │   ├── figuras/
 │   ├── boletim_html.html
-│   ├── resumo_estendido.html
-│   └── objetos_analise.RData
 │
 ├── README.md
 └── .gitignore
