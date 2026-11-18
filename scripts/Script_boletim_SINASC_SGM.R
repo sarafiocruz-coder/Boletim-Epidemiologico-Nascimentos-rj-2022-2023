@@ -57,32 +57,6 @@ View(dados_gerais)
 
 
 
-#------------------------------ OPÇÃO 2 ---------------------------------#
-
-
-
-#No caso do DATASUSA não funcionar, rode esse código, se já tiver os dados na pasta
-
-caminho_arquivo <- file.path(
-  getwd(),
-  "dados_gerais_RJ_2022_2023.csv"
-)
-
-# Verificar se o arquivo existe
-if (!file.exists(caminho_arquivo)) {
-  stop("Arquivo dados_gerais_RJ_2022_2023.csv não encontrado na pasta principal do projeto.")
-}
-
-# Importar os dados
-dados_gerais <- read.csv(
-  caminho_arquivo,
-  fileEncoding = "UTF-8"
-)
-
-# Verificação dos dados
-glimpse(dados_gerais)
-View(head(dados_gerais, 100))
-
 
 
 #--------------------------------------------------------------------------------------------------------------
