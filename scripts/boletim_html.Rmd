@@ -97,20 +97,18 @@ library(gridExtra)
 # EXECUTAR O SCRIPT PRINCIPAL
 # =====================================================
 
-# O Knit usa a pasta do .Rmd como diretório de trabalho,
-# então este caminho funciona em qualquer computador.
-caminho_script <- file.path("scripts", "Script_boletim_SINASC_SGM.R")
+caminho_script <- "Script_boletim_SINASC_SGM.R"
 
 if (!file.exists(caminho_script)) {
   stop(
     "Script não encontrado: ", caminho_script, "\n",
     "Diretório atual: ", getwd(), "\n",
-    "Verifique se o .Rmd está na pasta principal do projeto, ",
-    "junto da pasta 'scripts'."
+    "Verifique se o script está na mesma pasta do arquivo Rmd."
   )
 }
 
 source(caminho_script, encoding = "UTF-8")
+
 cat("Script principal executado com sucesso!\n")
 
 # =====================================================
