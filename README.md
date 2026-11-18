@@ -17,11 +17,11 @@ boletim-epidemiologico-nascimentos-rj-2022-2023/
 │
 ├── Documetos/
 │   ├── dados_decodificados_compactado    # dados gerais tratados
-│   └── dados_gerais_RJ_2022_2023/
-│       └── dados_tratados.zip
+│   └── dados_gerais_RJ_2022_2023         # dados brutos
+│       
 │
 ├── scripts/
-│   ├── Script_boletim_SINASC_SGM.R
+│   ├── Script_boletim_SINASC_SGM.R      
 │   ├── boletim_html.Rmd
 │   └── resumo_estendido.Rmd
 │
