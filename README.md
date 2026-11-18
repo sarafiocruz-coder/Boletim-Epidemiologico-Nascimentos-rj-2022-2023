@@ -27,12 +27,10 @@ boletim-epidemiologico-nascimentos-rj-2022-2023/
 │
 ├── outputs/
 │   ├── tabelas/
-│   │   └── tabelas_nascimentos.xlsx
-│   ├── figuras/
 │   ├── boletim_html.html
 │
 ├── README.md
-└── .gitignore
+
 ```
 
 **Observação:** os nomes dos arquivos compactados podem variar conforme os arquivos efetivamente disponibilizados no repositório. Mantenha os nomes e caminhos consistentes com os utilizados no script.
