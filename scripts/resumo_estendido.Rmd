@@ -1,0 +1,369 @@
+---
+title: "Resumo Estendido — Perfil dos Nascimentos no Estado do Rio de Janeiro, 2022–2023"
+author: "Sara Gonçalves Matias"
+date: "`r format(Sys.Date(), '%d/%m/%Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: flatly
+lang: pt-BR
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 8,
+  fig.height = 5
+)
+
+# Localiza a raiz do projeto considerando que este Rmd está em scripts/.
+candidatos_raiz <- c(getwd(), dirname(getwd()))
+raiz_projeto <- candidatos_raiz[
+  dir.exists(file.path(candidatos_raiz, "outputs"))
+][1]
+
+if (is.na(raiz_projeto)) {
+  stop(
+    "Não foi possível localizar a pasta outputs/. Abra o projeto a partir da pasta principal do repositório."
+  )
+}
+
+knitr::opts_knit$set(root.dir = raiz_projeto)
+
+arquivo_objetos <- file.path(raiz_projeto, "outputs", "objetos_analise.RData")
+
+if (!file.exists(arquivo_objetos)) {
+  stop(
+    paste0(
+      "Arquivo de objetos não encontrado: ", arquivo_objetos,
+      "\nExecute primeiro o script scripts/Script_boletim_SINASC_SGM.R ",
+      "até o final. Depois, execute novamente este documento."
+    )
+  )
+}
+
+load(arquivo_objetos)
+
+# Confere os objetos produzidos pelo script original.
+objetos_necessarios <- c(
+  "dados_gerais", "dados_tratados", "todas_tabelas",
+  "tab_total_nasc", "tab_sexo", "tab_parto", "tab_local",
+  "tab_idade", "tab_raca", "tab_escolaridade",
+  "tab_anomalia", "tab_baixo_peso", "tab_prematuro"
+)
+
+objetos_ausentes <- objetos_necessarios[
+  !vapply(objetos_necessarios, exists, logical(1), inherits = TRUE)
+]
+
+if (length(objetos_ausentes) > 0) {
+  stop(
+    paste(
+      "O arquivo objetos_analise.RData não contém:",
+      paste(objetos_ausentes, collapse = ", "),
+      ". Execute novamente o script de processamento após incluir a etapa de salvamento dos objetos."
+    )
+  )
+}
+
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(scales)
+
+# Totais e medidas calculados a partir das tabelas geradas pelo script.
+total_2022 <- tab_total_nasc %>%
+  filter(ano == 2022) %>%
+  summarise(valor = sum(Total)) %>%
+  pull(valor)
+
+total_2023 <- tab_total_nasc %>%
+  filter(ano == 2023) %>%
+  summarise(valor = sum(Total)) %>%
+  pull(valor)
+
+total_geral <- sum(tab_total_nasc$Total)
+variacao_percentual <- (total_2023 - total_2022) / total_2022 * 100
+
+formatar_numero <- function(x) {
+  format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE)
+}
+
+formatar_percentual <- function(x) {
+  if (length(x) == 0 || is.na(x)) return("não disponível")
+  paste0(format(round(x, 1), decimal.mark = ","), "%")
+}
+
+obter_percentual <- function(tabela, coluna_categoria, categoria, ano_ref) {
+  resultado <- tabela %>%
+    filter(ano == ano_ref, .data[[coluna_categoria]] == categoria) %>%
+    pull(Percentual)
+  if (length(resultado) == 0) NA_real_ else resultado[1]
+}
+
+pct_cesarea_2022 <- obter_percentual(tab_parto, "parto_desc", "Cesáreo", 2022)
+pct_cesarea_2023 <- obter_percentual(tab_parto, "parto_desc", "Cesáreo", 2023)
+pct_baixo_peso_2022 <- obter_percentual(tab_baixo_peso, "baixo_peso_desc", "Baixo peso (<2500g)", 2022)
+pct_baixo_peso_2023 <- obter_percentual(tab_baixo_peso, "baixo_peso_desc", "Baixo peso (<2500g)", 2023)
+pct_termo_2022 <- obter_percentual(tab_prematuro, "prematuro_desc", "A termo", 2022)
+pct_termo_2023 <- obter_percentual(tab_prematuro, "prematuro_desc", "A termo", 2023)
+pct_20_29_2022 <- obter_percentual(tab_idade, "faixa_etaria_desc", "20 a 29 anos", 2022)
+pct_20_29_2023 <- obter_percentual(tab_idade, "faixa_etaria_desc", "20 a 29 anos", 2023)
+
+# Padroniza a coluna de frequência para apresentação, sem alterar os objetos originais.
+preparar_tabela <- function(tabela, categoria_coluna) {
+  tabela %>%
+    rename(Categoria = all_of(categoria_coluna)) %>%
+    select(ano, Categoria, Total, Percentual) %>%
+    rename(
+      Ano = ano,
+      Frequência = Total,
+      `Percentual (%)` = Percentual
+    )
+}
+```
+
+# 1. Justificativa e objetivo
+
+O Sistema de Informações sobre Nascidos Vivos (SINASC) reúne informações epidemiológicas referentes aos nascimentos ocorridos no território nacional. Alimentado a partir da Declaração de Nascido Vivo (DNV), o sistema disponibiliza dados sobre características do recém-nascido, da gestação, do parto e da mãe, constituindo uma fonte relevante para o monitoramento das condições de saúde materno-infantil.
+
+A análise dessas informações permite descrever o perfil dos nascimentos, acompanhar características maternas e neonatais e identificar aspectos que merecem atenção no planejamento das ações de saúde. No âmbito estadual, a sistematização dos dados contribui para o acompanhamento da situação epidemiológica e para a produção de informações que apoiem a organização da atenção pré-natal, ao parto e ao recém-nascido.
+
+O boletim foi elaborado com o objetivo de **descrever o perfil epidemiológico dos nascidos vivos de mães residentes no Estado do Rio de Janeiro, nos anos de 2022 e 2023**, a partir dos registros do SINASC.
+
+# 2. Fonte e descrição dos dados
+
+A fonte de dados é o **Sistema de Informações sobre Nascidos Vivos (SINASC)**, disponibilizado pelo Departamento de Informática do Sistema Único de Saúde (DATASUS), do Ministério da Saúde. O conjunto analisado corresponde aos registros de nascidos vivos de mães residentes no Estado do Rio de Janeiro, nos anos de 2022 e 2023.
+
+A obtenção e a preparação dos dados são realizadas na primeira etapa do fluxo de trabalho, por meio do script `Script_boletim_SINASC_SGM.R`. O script utiliza os dados do SINASC e realiza a organização da base que será utilizada nas análises. Este documento não realiza novamente a extração nem o tratamento: ele carrega os objetos produzidos e salvos pelo script.
+
+As variáveis utilizadas abrangem:
+
+- **Nascimento:** ano, sexo do recém-nascido, tipo de parto e local de ocorrência;
+- **Características maternas:** idade, raça/cor e escolaridade;
+- **Características do recém-nascido:** presença de anomalia congênita, peso ao nascer e idade gestacional.
+
+A escolaridade materna foi descrita com base na variável `ESCMAE2010`.
+
+# 3. Metodologia analítica
+
+## 3.1 Delineamento e recortes
+
+Foi realizado um estudo descritivo, de abordagem quantitativa, com utilização de dados secundários do SINASC. O recorte temporal compreendeu os anos de **2022 e 2023**, e o recorte territorial considerou os nascidos vivos de mães residentes no **Estado do Rio de Janeiro**.
+
+A unidade de análise foi o registro de nascido vivo. As análises foram organizadas em três dimensões: perfil dos nascimentos, perfil materno e perfil do recém-nascido.
+
+## 3.2 Tratamento e organização dos dados
+
+O script de processamento realiza a organização da base, a seleção das variáveis de interesse, a adequação dos tipos de dados e a recodificação de variáveis categóricas em categorias descritivas.
+
+São contempladas categorias para sexo, tipo de parto, local de nascimento, raça/cor materna, escolaridade, faixa etária materna, anomalias congênitas, peso ao nascer e idade gestacional. Os registros classificados como ignorados ou sem informação são mantidos nas tabelas, permitindo observar a distribuição dessas ocorrências.
+
+A identificação do ano é realizada a partir da variável de data de nascimento, e a análise é delimitada aos anos de 2022 e 2023.
+
+## 3.3 Indicadores e medidas descritivas
+
+Foram calculadas **frequências absolutas** e **frequências relativas (percentuais)** para as categorias analisadas, separadamente para cada ano.
+
+A frequência absoluta corresponde ao número de registros em cada categoria. A frequência relativa corresponde à proporção dos registros de cada categoria em relação ao total de nascimentos do respectivo ano, multiplicada por 100.
+
+Também é apresentada a variação percentual do número total de nascimentos entre 2022 e 2023, calculada pela diferença entre os totais anuais dividida pelo total de 2022 e multiplicada por 100.
+
+Não foram calculadas taxas de incidência, coeficientes baseados em população residente ou médias móveis. A análise é descritiva e compara a distribuição dos registros entre os dois anos.
+
+## 3.4 Classificação das variáveis
+
+**Peso ao nascer**
+
+- Baixo peso: menos de 2.500 g;
+- Peso adequado: de 2.500 g a 3.999 g;
+- Peso elevado: 4.000 g ou mais.
+
+**Idade gestacional**
+
+A classificação utilizada no processamento segue os códigos e categorias implementados no script: prematuridade extrema, pré-termo, a termo, pós-termo, ignorado e sem informação. A interpretação da classificação deve considerar a codificação efetivamente utilizada na base do SINASC.
+
+**Anomalias congênitas**
+
+A variável é apresentada nas categorias com anomalia, sem anomalia, ignorado e sem informação, conforme a recodificação implementada no script.
+
+## 3.5 Apresentação dos resultados
+
+Os resultados são apresentados em tabelas de frequência e gráficos, permitindo comparar os anos de 2022 e 2023. As tabelas correspondem aos objetos gerados pelo script de processamento.
+
+# 4. Pacotes e ambiente computacional
+
+O processamento foi desenvolvido na linguagem **R**, utilizando o RStudio. Os pacotes identificados no script incluem:
+
+| Pacote | Finalidade |
+|---|---|
+| `microdatasus` | Extração de dados do DATASUS, quando utilizada a rotina de consulta |
+| `read.dbc` | Leitura de arquivos DBC, quando necessária |
+| `tidyverse` | Limpeza, transformação e organização dos dados |
+| `ggplot2` | Construção de gráficos |
+| `scales` | Formatação de escalas e rótulos |
+| `writexl` | Exportação das tabelas para arquivo Excel |
+| `kableExtra` | Formatação de tabelas |
+| `gridExtra` | Organização de elementos gráficos |
+| `knitr` | Renderização do documento dinâmico |
+
+As versões do R e dos pacotes devem ser registradas no ambiente de execução utilizado na versão final do projeto.
+
+# 5. Resultados e interpretação
+
+## 5.1 Número de nascidos vivos
+
+No conjunto processado, foram identificados **`r formatar_numero(total_geral)` registros** referentes aos anos analisados. Em 2022, foram registrados `r formatar_numero(total_2022)` nascimentos; em 2023, `r formatar_numero(total_2023)`. A variação percentual entre os dois anos foi de **`r formatar_percentual(variacao_percentual)`**.
+
+```{r grafico-total}
+tab_total_nasc %>%
+  ggplot(aes(x = factor(ano), y = Total)) +
+  geom_col(fill = "#5B0E2D", width = 0.6) +
+  geom_text(
+    aes(label = scales::comma(Total, big.mark = ".", decimal.mark = ",")),
+    vjust = -0.4,
+    size = 4
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.12)),
+    labels = label_number(big.mark = ".", decimal.mark = ",")
+  ) +
+  labs(x = "Ano", y = "Número de nascidos vivos") +
+  theme_minimal(base_size = 12)
+```
+
+A comparação dos totais anuais permite observar a variação no volume de nascimentos registrados. Essa diferença não deve ser interpretada como mudança de risco ou incidência, uma vez que não foram utilizados denominadores populacionais.
+
+## 5.2 Perfil dos nascimentos
+
+### Sexo do recém-nascido
+
+```{r tabela-sexo}
+knitr::kable(
+  preparar_tabela(tab_sexo, "sexo_desc"),
+  caption = "Distribuição dos nascidos vivos segundo sexo. Rio de Janeiro, 2022–2023."
+)
+```
+
+### Tipo de parto
+
+```{r tabela-parto}
+knitr::kable(
+  preparar_tabela(tab_parto, "parto_desc"),
+  caption = "Distribuição dos nascidos vivos segundo tipo de parto. Rio de Janeiro, 2022–2023."
+)
+```
+
+A proporção de partos cesáreos foi de `r formatar_percentual(pct_cesarea_2022)` em 2022 e `r formatar_percentual(pct_cesarea_2023)` em 2023. A comparação descreve a participação de cada tipo de parto no conjunto de nascimentos registrados, sem permitir, isoladamente, avaliar a indicação clínica ou a adequação da via de parto.
+
+### Local de ocorrência
+
+```{r tabela-local}
+knitr::kable(
+  preparar_tabela(tab_local, "localnasc_desc"),
+  caption = "Distribuição dos nascidos vivos segundo local de ocorrência. Rio de Janeiro, 2022–2023."
+)
+```
+
+## 5.3 Perfil materno
+
+### Faixa etária materna
+
+```{r tabela-idade}
+knitr::kable(
+  preparar_tabela(tab_idade, "faixa_etaria_desc"),
+  caption = "Distribuição dos nascidos vivos segundo faixa etária materna. Rio de Janeiro, 2022–2023."
+)
+```
+
+A faixa de 20 a 29 anos correspondeu a `r formatar_percentual(pct_20_29_2022)` dos registros em 2022 e `r formatar_percentual(pct_20_29_2023)` em 2023. A distribuição etária permite identificar os grupos com maior participação entre os nascimentos registrados.
+
+### Raça/cor materna
+
+```{r tabela-raca}
+knitr::kable(
+  preparar_tabela(tab_raca, "racacor_desc"),
+  caption = "Distribuição dos nascidos vivos segundo raça/cor materna. Rio de Janeiro, 2022–2023."
+)
+```
+
+A distribuição por raça/cor deve ser interpretada considerando a presença de registros ignorados ou sem informação, pois a completitude interfere na descrição do perfil materno e na comparação entre os anos.
+
+### Escolaridade materna
+
+```{r tabela-escolaridade}
+knitr::kable(
+  preparar_tabela(tab_escolaridade, "escolaridade_desc"),
+  caption = "Distribuição dos nascidos vivos segundo escolaridade materna. Rio de Janeiro, 2022–2023."
+)
+```
+
+A escolaridade é uma característica sociodemográfica relevante para a descrição do perfil materno. Sua distribuição, entretanto, não deve ser interpretada isoladamente como explicação para os desfechos de nascimento.
+
+## 5.4 Perfil do recém-nascido
+
+### Anomalias congênitas
+
+```{r tabela-anomalia}
+knitr::kable(
+  preparar_tabela(tab_anomalia, "anomalia_desc"),
+  caption = "Distribuição dos nascidos vivos segundo registro de anomalia congênita. Rio de Janeiro, 2022–2023."
+)
+```
+
+A leitura dos registros de anomalias congênitas deve considerar a frequência da categoria “Com anomalia” e a proporção de registros ignorados ou sem informação. Alterações na completitude podem influenciar a comparação entre os anos.
+
+### Peso ao nascer
+
+```{r tabela-peso}
+knitr::kable(
+  preparar_tabela(tab_baixo_peso, "baixo_peso_desc"),
+  caption = "Distribuição dos nascidos vivos segundo peso ao nascer. Rio de Janeiro, 2022–2023."
+)
+```
+
+O percentual de baixo peso ao nascer foi de `r formatar_percentual(pct_baixo_peso_2022)` em 2022 e `r formatar_percentual(pct_baixo_peso_2023)` em 2023. A comparação permite acompanhar a participação dos nascimentos com peso inferior a 2.500 g no conjunto dos registros, sem estabelecer causalidade.
+
+### Idade gestacional
+
+```{r tabela-gestacao}
+knitr::kable(
+  preparar_tabela(tab_prematuro, "prematuro_desc"),
+  caption = "Distribuição dos nascidos vivos segundo idade gestacional. Rio de Janeiro, 2022–2023."
+)
+```
+
+A proporção de nascimentos classificados como a termo foi de `r formatar_percentual(pct_termo_2022)` em 2022 e `r formatar_percentual(pct_termo_2023)` em 2023. A interpretação deve considerar os registros ignorados ou sem informação.
+
+# 6. Considerações sobre a interpretação dos resultados
+
+A análise descritiva dos registros do SINASC permite caracterizar o perfil dos nascimentos de mães residentes no Estado do Rio de Janeiro e comparar sua distribuição entre 2022 e 2023. A leitura conjunta das características dos nascimentos, do perfil materno e das condições do recém-nascido oferece subsídios para o monitoramento epidemiológico da saúde materno-infantil.
+
+Os percentuais apresentados expressam a distribuição dos registros em cada ano. Portanto, não correspondem a taxas de incidência ou risco populacional. Diferenças na completitude das variáveis podem influenciar a interpretação das comparações temporais, especialmente quando há alteração na proporção de registros ignorados ou sem informação.
+
+Os resultados devem ser interpretados considerando as limitações inerentes ao uso de dados secundários, incluindo possíveis inconsistências no preenchimento da Declaração de Nascido Vivo e campos incompletos. A análise descreve os registros disponíveis e não permite, por si só, estabelecer relações causais entre características maternas, cuidados recebidos e desfechos neonatais.
+
+# 7. Reprodutibilidade e execução
+
+Este documento depende dos objetos produzidos pelo script `scripts/Script_boletim_SINASC_SGM.R`. Para reproduzir os resultados:
+
+1. Abra o projeto no RStudio a partir da pasta principal do repositório.
+2. Execute integralmente `scripts/Script_boletim_SINASC_SGM.R`.
+3. Confirme que o script gerou `outputs/objetos_analise.RData` e a planilha de tabelas.
+4. Abra `scripts/resumo_estendido.Rmd` e selecione **Knit**.
+
+O resumo estendido não executa novamente a extração nem o tratamento dos dados. Caso o arquivo de objetos não seja encontrado, será necessário executar primeiro o script de processamento.
+
+# 8. Referências
+
+BRASIL. Ministério da Saúde. **Sistema de Informações sobre Nascidos Vivos (SINASC): manual de instruções para preenchimento da Declaração de Nascido Vivo**. Brasília: Ministério da Saúde, 2022.
+
+BRASIL. Ministério da Saúde. **Sistema de Informações sobre Nascidos Vivos (SINASC)**. Brasília: Ministério da Saúde, 2025. Disponível em: <http://www2.datasus.gov.br/DATASUS/index.php?area=060702>.
+
+BRASIL. Ministério da Saúde. Departamento de Informática do SUS (DATASUS). **Microdatasus: pacote para extração e processamento de microdados do DATASUS**. Disponível em: <https://github.com/rfsaldanha/microdatasus>.
